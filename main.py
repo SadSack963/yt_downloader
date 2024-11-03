@@ -16,10 +16,18 @@ STYLE = ("Roboto", 35, "bold")
 
 def download_video():
     url = YouTube(link.get())
-    video = url.streams.get_highest_resolution()
+    # if progressive=True, then gets the highest video and audio in the same file
+    # if progressive=False, then we need to download the video and audio separately, but quality will be much better.
+    video = url.streams.get_highest_resolution(progressive=False)
     video.download(output_path=SAVE_PATH)
     result_label = Label(text="Video downloaded successfully!", font=SMALL, fg=ICE_BLUE, bg=CHARCOAL_BLACK)
     result_label.grid(column=1, row=5)
+
+
+"""
+After downloading separate video and audio, combine using:
+ffmpeg -i "video_filename.mp4" -i "audio_filename.m4a" -acodec copy -vcodec copy "out_filename.mp4"
+"""
 
 
 window = Tk()
