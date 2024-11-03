@@ -8,7 +8,7 @@ from pytubefix import YouTube
 
 SAVE_PATH = "./Downloaded_Content"
 CHARCOAL_BLACK = "#36454F"
-WARM_WHITE = "#F%F%F%"
+WARM_WHITE = "#F5F5F5"
 ICE_BLUE = "#E0FFFF"
 SMALL = ("Roboto", 15, "bold")
 STYLE = ("Roboto", 35, "bold")
