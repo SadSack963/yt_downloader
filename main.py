@@ -7,11 +7,18 @@ Modified: John Patmore
 """
 
 from tkinter import *
+from urllib.error import HTTPError, URLError
 from pytubefix import YouTube
 from pytubefix.exceptions import RegexMatchError
 from pytubefix.cli import on_progress
+from ffmpeg import FFmpeg  # pip install python-ffmpeg
+from ffmpeg.errors import FFmpegError
 
+
+# TODO: Create a configuration file for user settings
 SAVE_PATH = "./Downloaded_Content"
+FFMPEG_PATH = r"C:\Program Files\FFmpeg For Audacity\ffmpeg-7.0.2-full_build-shared\bin\ffmpeg.exe"
+
 CHARCOAL_BLACK = "#36454F"
 WARM_WHITE = "#F5F5F5"
 ICE_BLUE = "#E0FFFF"
@@ -20,6 +27,8 @@ MEDIUM_FONT = "Roboto 25 bold"
 LARGE_FONT = "Roboto 35 bold"
 
 scheduler = None
+
+# TODO: Check for FFmpeg on user's system
 
 
 def on_change(*args):
@@ -39,28 +48,56 @@ def get_title():
             title_label.config(text=yt.title)
             author_label.config(text=yt.author)
         except RegexMatchError:
-            title_label.config(text="")
+            title_label.config(text="")  # TODO: Pull these out into a function
             author_label.config(text="")
-            pass
+    else:
+        title_label.config(text="")
+        author_label.config(text="")
 
 
 def download_video():
     url = input_box.get()
-    yt = YouTube(url, on_progress_callback=on_progress)
+    if url:
+        try:
+            yt = YouTube(url, on_progress_callback=on_progress)
 
-    # Get the streams with the highest resolution video and best quality audio
-    video = yt.streams.filter(file_extension='mp4', only_video=True).get_highest_resolution(progressive=False)
-    audio = yt.streams.filter(file_extension='mp4', only_audio=True).order_by("abr")[-1]
+            # Get the streams with the highest resolution video and best quality audio
+            video_stream = yt.streams.filter(file_extension='mp4', only_video=True).get_highest_resolution(progressive=False)
+            audio_stream = yt.streams.filter(file_extension='mp4', only_audio=True).order_by("abr")[-1]
 
-    # Download the streams
-    video.download(output_path=SAVE_PATH)
-    audio.download(output_path=SAVE_PATH)
+            # TODO: Disable download_button and change text. Enable when finished or error
+
+            # Download the streams
+            video_path = video_stream.download(output_path=SAVE_PATH)
+            audio_path = audio_stream.download(output_path=SAVE_PATH)
+            merge(video_path, audio_path, "filename")  # TODO: Create a field to enter the output filename
+        except RegexMatchError:
+            title_label.config(text="Video not found on YouTube.")  # TODO: Create function to change error colour, etc.
+        except HTTPError as e:
+            print(f"HTTP error: [{e.code}] {e.reason}")
+        except URLError as e:
+            print(f"URL error: {e.reason}")
 
 
-"""
-After downloading separate video and audio, combine using:
-ffmpeg -i "video_filename.mp4" -i "audio_filename.m4a" -acodec copy -vcodec copy "out_filename.mp4"
-"""
+def merge(video_path, audio_path, filename):
+    """
+    After downloading separate video and audio, combine using:
+    ffmpeg -i "video_filename.mp4" -i "audio_filename.m4a" -acodec copy -vcodec copy "out_filename.mp4"
+    """
+    destination_path = SAVE_PATH + "/" + filename + ".mp4"
+    try:
+        ffmpeg = (
+            FFmpeg(executable=FFMPEG_PATH)
+            .option("y")  # overwrite output files without asking
+            .input(video_path)
+            .input(audio_path)
+            .output(destination_path, vcodec="copy", acodec="copy")
+            )
+        ffmpeg.execute()
+        title_label.config(text="Success!")  # TODO: Something a bit more informative please :)
+    except FFmpegError as e:
+        title_label.config(text=f"FFmpeg error: [{e.arguments}] {e.message}")
+
 
 
 window = Tk()
