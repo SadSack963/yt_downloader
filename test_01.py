@@ -1,11 +1,14 @@
-from pytubefix import YouTube
+from pytubefix import YouTube, Stream
 from pytubefix.cli import on_progress
 
-url = "https://youtu.be/4OBJhKvLJ0c?si=Y2j2l9rzV1uPCMix"
+
+url = "https://www.youtube.com/watch?v=oRTuBS9uFsA"
 SAVE_PATH = "./Downloaded_Content"
 
 yt = YouTube(url, on_progress_callback=on_progress)
 # print(yt.title)
+
+# print(yt.streams.filter(file_extension='mp4'))
 """
 [
 	<Stream: itag="18" mime_type="video/mp4" res="360p" fps="24fps" vcodec="avc1.42001E" acodec="mp4a.40.2" progressive="True" type="video">, 
@@ -19,16 +22,11 @@ yt = YouTube(url, on_progress_callback=on_progress)
 	<Stream: itag="140" mime_type="audio/mp4" abr="128kbps" acodec="mp4a.40.2" progressive="False" type="audio">
 ]
 """
-print(yt.streams.filter(file_extension='mp4'))
+# Get the streams with the highest resolution video and best quality audio
+video = yt.streams.filter(file_extension='mp4', only_video=True).get_highest_resolution(progressive=False)
+audio = yt.streams.filter(file_extension='mp4', only_audio=True).order_by("abr")[-1]
 
-# 1080p video
-stream = yt.streams.get_by_itag(137)
-stream.download(output_path=SAVE_PATH)
-# 128kbps audio
-# stream = yt.streams.get_by_itag(140)
-# stream.download(output_path=SAVE_PATH)
+# Download the streams
+video.download(output_path=SAVE_PATH)
+audio.download(output_path=SAVE_PATH)
 
-exit()
-
-ys = yt.streams.get_highest_resolution()
-ys.download()
