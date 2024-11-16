@@ -14,6 +14,10 @@ from pytubefix.cli import on_progress
 from ffmpeg import FFmpeg  # pip install python-ffmpeg
 from ffmpeg.errors import FFmpegError
 import html
+import logging
+
+import settings
+from logger import start_logging
 
 # TODO: Create a configuration file for user settings
 SAVE_PATH = "./Downloaded_Content"
@@ -27,30 +31,6 @@ MEDIUM_FONT = "Roboto 25 bold"
 LARGE_FONT = "Roboto 35 bold"
 
 scheduler = None
-
-# TODO: Check for FFmpeg on user's system - issue notification if not found
-
-
-def check_ffmpeg() -> None:
-    from shutil import which
-
-    if not which("ffmpeg"):
-        print("FFmpeg not found on your system.\n"
-              "Please install FFmpeg.\nhttps://www.ffmpeg.org\n"
-              "or specify the path.")
-
-
-def get_settings() -> dict:
-    import json
-
-    with open('./settings.json', mode='r') as fp:
-        settings = json.load(fp)
-    if not settings:
-        with open('./defaults.json', mode='r') as fp:
-            settings = json.load(fp)
-        with open('./settings.json', mode='w') as fp:
-            json.dump(settings, fp, indent=2)
-    return settings
 
 
 def on_change(*args) -> None:
@@ -131,7 +111,11 @@ def merge(video_path: str, audio_path: str, filename: str) -> None:
         title_label.config(text="Success!")  # TODO: Something a bit more informative please :)
 
 
-user_settings = get_settings()
+start_logging()
+user_settings = settings.get_settings()
+settings.check_ffmpeg(user_settings["ffmpegPath"])
+
+# TODO: Add a screen for settings
 # TODO: Add Entry box for FFmpeg path
 
 window = Tk()

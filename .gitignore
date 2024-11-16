@@ -1,3 +1,5 @@
 .idea
 .venvS
+logs
+test*
 Downloaded_Content
