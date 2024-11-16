@@ -15,7 +15,6 @@ from ffmpeg import FFmpeg  # pip install python-ffmpeg
 from ffmpeg.errors import FFmpegError
 import html
 
-
 # TODO: Create a configuration file for user settings
 SAVE_PATH = "./Downloaded_Content"
 FFMPEG_PATH = r"C:\Program Files\FFmpeg For Audacity\ffmpeg-7.0.2-full_build-shared\bin\ffmpeg.exe"  # Default "ffmpeg"
@@ -30,6 +29,28 @@ LARGE_FONT = "Roboto 35 bold"
 scheduler = None
 
 # TODO: Check for FFmpeg on user's system - issue notification if not found
+
+
+def check_ffmpeg() -> None:
+    from shutil import which
+
+    if not which("ffmpeg"):
+        print("FFmpeg not found on your system.\n"
+              "Please install FFmpeg.\nhttps://www.ffmpeg.org\n"
+              "or specify the path.")
+
+
+def get_settings() -> dict:
+    import json
+
+    with open('./settings.json', mode='r') as fp:
+        settings = json.load(fp)
+    if not settings:
+        with open('./defaults.json', mode='r') as fp:
+            settings = json.load(fp)
+        with open('./settings.json', mode='w') as fp:
+            json.dump(settings, fp, indent=2)
+    return settings
 
 
 def on_change(*args) -> None:
@@ -75,6 +96,7 @@ def download_video() -> None:
 
             # TODO: Disable download_button and change text. Enable when finished or error
             # TODO: Get the output filename
+            # TODO: Download options for video and audio
 
             # Download the streams
             video_path = video_stream.download(output_path=SAVE_PATH)
@@ -109,6 +131,9 @@ def merge(video_path: str, audio_path: str, filename: str) -> None:
         title_label.config(text="Success!")  # TODO: Something a bit more informative please :)
 
 
+user_settings = get_settings()
+# TODO: Add Entry box for FFmpeg path
+
 window = Tk()
 window.title("YouTube Downloader")
 window.config(padx=50, pady=50, bg=CHARCOAL_BLACK)
@@ -132,6 +157,8 @@ title_label.grid(column=1, row=4, pady=5)
 
 author_label = Label(text="", font=SMALL_FONT, fg=WARM_WHITE, bg=CHARCOAL_BLACK)
 author_label.grid(column=1, row=5, pady=5)
+
+# TODO: Add check boxes for video and audio choices
 
 output_label = Label(text="Output Filename", font=SMALL_FONT, fg=WARM_WHITE, bg=CHARCOAL_BLACK)
 output_label.grid(column=1, row=6)

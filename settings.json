@@ -1,0 +1,21 @@
+{
+  "savePath": "./downloaded_content",
+  "ffmpegPath": "ffmpeg",
+  "colors": {
+    "border": "3c3f41",
+    "background": "2b2b2b",
+    "defaultText": "a9b7c6",
+    "titleText": "b0b0b0",
+    "url": "287bde",
+    "greenButton": "30593d",
+    "redButton": "a02f020"
+  },
+  "font": "Roboto",
+  "fontSizes": {
+    "tiny": "8",
+    "small": "10",
+    "normal": "12",
+    "large": "20",
+    "huge": "30"
+  }
+}
