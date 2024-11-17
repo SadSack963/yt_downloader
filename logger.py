@@ -2,6 +2,8 @@ import logging
 import sys
 from datetime import date
 
+logger = logging.getLogger(__name__)
+
 
 def start_logging():
     today = date.today()
@@ -13,18 +15,19 @@ def start_logging():
     # https://docs.python.org/3.13/library/logging.html#logrecord-attributes
 
     stdout_handler = logging.StreamHandler(sys.stdout)
-    file_handler = logging.FileHandler(f'./logs/{date_sortable}.log')
+    file_handler = logging.FileHandler(f'./logs/{date_sortable}.log', encoding="UTF-8")
 
     logging.basicConfig(
         # filename=f'./logs/{date_sortable}.log',
         # filemode='a',
         # format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
         style='{',
-        format='{asctime} {msecs:003.0f} {levelname:9s} {message} - {module}({lineno})',
+        format='{asctime} {msecs:003.0f} {levelname:9s} {message} - {name} @ {lineno}',
         datefmt='%H:%M:%S',
         level=logging.DEBUG,
         handlers=[stdout_handler, file_handler]
     )
+    logging.debug("Logging - start")
 
 
 if __name__ == "__main__":
@@ -41,3 +44,5 @@ if __name__ == "__main__":
     logging.error('Test error message')
     sleep(2)
     logging.critical('Test critical message')
+
+    logging.getLogger()

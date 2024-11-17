@@ -1,7 +1,8 @@
 import logging
-from importlib.resources import files
 from shutil import which
 import json
+
+logger = logging.getLogger(__name__)
 
 _DEFAULT_SETTINGS = {
     "savePath": "./downloaded_content",
@@ -50,7 +51,7 @@ def get_settings(reset: bool = False) -> dict:
         settings = None
 
     if not settings:
-        load_defaults()
+        settings = load_defaults()
     return settings
 
 

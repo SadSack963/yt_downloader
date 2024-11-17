@@ -6,6 +6,7 @@ Modified: John Patmore
 
 """
 
+import logging
 from tkinter import *
 from urllib.error import HTTPError, URLError
 from pytubefix import YouTube
@@ -14,10 +15,11 @@ from pytubefix.cli import on_progress
 from ffmpeg import FFmpeg  # pip install python-ffmpeg
 from ffmpeg.errors import FFmpegError
 import html
-import logging
 
-import settings
+from settings import get_settings, check_ffmpeg
 from logger import start_logging
+
+logger = logging.getLogger(__name__)
 
 # TODO: Create a configuration file for user settings
 SAVE_PATH = "./Downloaded_Content"
@@ -79,15 +81,20 @@ def download_video() -> None:
             # TODO: Download options for video and audio
 
             # Download the streams
+            logging.debug("Video download - start")
             video_path = video_stream.download(output_path=SAVE_PATH)
+            logging.debug("Video download - end")
+            logging.debug("Audio download - start")
             audio_path = audio_stream.download(output_path=SAVE_PATH)
+            logging.debug("Audio download - end")
             merge(video_path, audio_path, filename)  # TODO: Create a field to enter the output filename
         except RegexMatchError:
+            logging.warning(f'Video not found - {url}')
             title_label.config(text="Video not found on YouTube.")  # TODO: Create function to change error colour, etc.
         except HTTPError as e:
-            print(f"HTTP error: [{e.code}] {e.reason}")
+            logging.error(f"HTTP error: [{e.code}] {e.reason}")
         except URLError as e:
-            print(f"URL error: {e.reason}")
+            logging.error(f"URL error: {e.reason}")
 
 
 def merge(video_path: str, audio_path: str, filename: str) -> None:
@@ -97,6 +104,7 @@ def merge(video_path: str, audio_path: str, filename: str) -> None:
     """
     destination_path = f"{SAVE_PATH}/{filename}.mp4"
     try:
+        # Transcoding is slow. Keep the original codecs.
         ffmpeg = (
             FFmpeg(executable=FFMPEG_PATH)
             .option("y")  # overwrite output files without asking
@@ -104,16 +112,20 @@ def merge(video_path: str, audio_path: str, filename: str) -> None:
             .input(audio_path)
             .output(destination_path, vcodec="copy", acodec="copy")
             )
+        logging.debug("Merge - start")
         ffmpeg.execute()
+        logging.debug("Merge - end")
     except FFmpegError as e:
+        logging.error(f"FFmpeg error: [{e.arguments}] {e.message}")
         title_label.config(text=f"FFmpeg error: [{e.arguments}] {e.message}")
     else:
+        logging.info("Success! Video and Audio merged")
         title_label.config(text="Success!")  # TODO: Something a bit more informative please :)
 
 
 start_logging()
-user_settings = settings.get_settings()
-settings.check_ffmpeg(user_settings["ffmpegPath"])
+user_settings = get_settings()
+check_ffmpeg(user_settings["ffmpegPath"])
 
 # TODO: Add a screen for settings
 # TODO: Add Entry box for FFmpeg path
@@ -123,34 +135,36 @@ window.title("YouTube Downloader")
 window.config(padx=50, pady=50, bg=CHARCOAL_BLACK)
 
 main_label = Label(text="YouTube Video Downloader", font=LARGE_FONT, fg=WARM_WHITE, bg=CHARCOAL_BLACK)
-main_label.grid(column=1, row=0)
+main_label.grid(column=1, row=0, columnspan=2)
 
 icons_label = Label(text="\U0001f3a5 \U0001f3ac \U0001f39f \U0001f3ab", font=LARGE_FONT, fg=ICE_BLUE, bg=CHARCOAL_BLACK)
-icons_label.grid(column=1, row=1)
+icons_label.grid(column=1, row=1, columnspan=2)
 
 inst_label = Label(text="Paste the YouTube link here:", font=SMALL_FONT, fg=WARM_WHITE, bg=CHARCOAL_BLACK)
-inst_label.grid(column=1, row=2)
+inst_label.grid(column=1, row=2, columnspan=2)
 
 link = StringVar()
 link.trace_add('write', on_change)
 input_box = Entry(width=80, bg="white", borderwidth=5, relief="flat", textvariable=link, font="Roberto 10")
-input_box.grid(column=1, row=3)
+input_box.grid(column=1, row=3, columnspan=2)
 
 title_label = Label(text="", font=SMALL_FONT, fg=WARM_WHITE, bg=CHARCOAL_BLACK)
-title_label.grid(column=1, row=4, pady=5)
+title_label.grid(column=1, row=4, pady=5, columnspan=2)
 
 author_label = Label(text="", font=SMALL_FONT, fg=WARM_WHITE, bg=CHARCOAL_BLACK)
-author_label.grid(column=1, row=5, pady=5)
+author_label.grid(column=1, row=5, pady=5, columnspan=2)
 
 # TODO: Add check boxes for video and audio choices
 
 output_label = Label(text="Output Filename", font=SMALL_FONT, fg=WARM_WHITE, bg=CHARCOAL_BLACK)
 output_label.grid(column=1, row=6)
 
-output_box = Entry(width=80, bg="white", borderwidth=5, relief="flat", textvariable=link, font="Roberto 10")
+output_box = Entry(width=80, bg="white", borderwidth=5, relief="flat", font="Roberto 10")
 output_box.grid(column=2, row=6)
 
 download_button = Button(text="Download", width=25, height=2, command=download_video, font=SMALL_FONT)
-download_button.grid(column=1, row=7)
+download_button.grid(column=1, row=7, columnspan=2)
+
+# TODO: Add a progress bar!
 
 window.mainloop()
