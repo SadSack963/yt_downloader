@@ -1,68 +1,67 @@
 """
-Author: Prateek Rashmi Wagh
+Author: John Patmore (SadSack963)
+
+Original concept: Prateek Rashmi Wagh
 https://www.udemy.com/course/100-days-of-code/learn/lecture/45090307#questions/22334943
-
-Modified: John Patmore
-
 """
 
-import logging
 from tkinter import *
-from urllib.error import HTTPError, URLError
-from pytubefix import YouTube
-from pytubefix.exceptions import RegexMatchError
-from pytubefix.cli import on_progress
 from ffmpeg import FFmpeg  # pip install python-ffmpeg
 from ffmpeg.errors import FFmpegError
-import html
+from html import escape
+from pytubefix import YouTube
+from pytubefix.cli import on_progress
+from pytubefix.exceptions import RegexMatchError
+from urllib.error import HTTPError, URLError
 
-from settings import get_settings, check_ffmpeg
+import logging
+
 from logger import start_logging
+from settings import get_settings, check_ffmpeg
 
 logger = logging.getLogger(__name__)
 
-# TODO: Create a configuration file for user settings
-SAVE_PATH = "./Downloaded_Content"
-FFMPEG_PATH = r"C:\Program Files\FFmpeg For Audacity\ffmpeg-7.0.2-full_build-shared\bin\ffmpeg.exe"  # Default "ffmpeg"
-
-CHARCOAL_BLACK = "#36454F"
-WARM_WHITE = "#F5F5F5"
-ICE_BLUE = "#E0FFFF"
-SMALL_FONT = "Roboto 15 bold"
-MEDIUM_FONT = "Roboto 25 bold"
-LARGE_FONT = "Roboto 35 bold"
-
-scheduler = None
+url_check_timer = None
 
 
 def on_change(*args) -> None:
-    global scheduler
+    global url_check_timer
     # Cancel scheduler upon content change
-    if scheduler:
-        input_box.after_cancel(scheduler)
+    if url_check_timer:
+        input_box.after_cancel(url_check_timer)
     # Create a new scheduler to execute the call one second later
-    scheduler = input_box.after(1000, get_title)
+    url_check_timer = input_box.after(1000, get_title)
 
 
 def get_title() -> None:
+    def enable():
+        title_label.config(text=yt.title)
+        author_label.config(text=yt.author)
+        output_box.insert(0, yt.title)
+        download_button.config(state="normal")
+        download_button.config(background=user_settings['colors']['greenButton'])
+
+    def disable():
+        title_label.config(text="")
+        author_label.config(text="")
+        output_box.delete(FIRST, LAST)
+        download_button.config(state="disabled")
+        download_button.config(background=user_settings['colors']['redButton'])
+
     url = get_user_input(input_box.get())
     if url:
         try:
             yt = YouTube(url=url)
-            title_label.config(text=yt.title)
-            author_label.config(text=yt.author)
-            # TODO: Enable download button
+            enable()
         except RegexMatchError:
-            title_label.config(text="")  # TODO: Pull these out into a function
-            author_label.config(text="")
+            disable()
     else:
-        title_label.config(text="")
-        author_label.config(text="")
+        disable()
 
 
 def get_user_input(data: str) -> str:
     # Sanitize user input
-    return html.escape(data).strip()
+    return escape(data).strip()
 
 
 def download_video() -> None:
@@ -77,17 +76,16 @@ def download_video() -> None:
             audio_stream = yt.streams.filter(file_extension='mp4', only_audio=True).order_by("abr")[-1]
 
             # TODO: Disable download_button and change text. Enable when finished or error
-            # TODO: Get the output filename
             # TODO: Download options for video and audio
 
             # Download the streams
             logging.debug("Video download - start")
-            video_path = video_stream.download(output_path=SAVE_PATH)
+            video_path = video_stream.download(output_path=user_settings["savePath"])
             logging.debug("Video download - end")
             logging.debug("Audio download - start")
-            audio_path = audio_stream.download(output_path=SAVE_PATH)
+            audio_path = audio_stream.download(output_path=user_settings["savePath"])
             logging.debug("Audio download - end")
-            merge(video_path, audio_path, filename)  # TODO: Create a field to enter the output filename
+            merge(video_path, audio_path, filename)
         except RegexMatchError:
             logging.warning(f'Video not found - {url}')
             title_label.config(text="Video not found on YouTube.")  # TODO: Create function to change error colour, etc.
@@ -102,11 +100,11 @@ def merge(video_path: str, audio_path: str, filename: str) -> None:
     After downloading separate video and audio, combine using:
     ffmpeg -i "video_filename.mp4" -i "audio_filename.m4a" -acodec copy -vcodec copy "out_filename.mp4"
     """
-    destination_path = f"{SAVE_PATH}/{filename}.mp4"
+    destination_path = f"{user_settings["savePath"]}/{filename}.mp4"
     try:
         # Transcoding is slow. Keep the original codecs.
         ffmpeg = (
-            FFmpeg(executable=FFMPEG_PATH)
+            FFmpeg(executable=user_settings["ffmpegPath"])
             .option("y")  # overwrite output files without asking
             .input(video_path)
             .input(audio_path)
@@ -132,39 +130,97 @@ check_ffmpeg(user_settings["ffmpegPath"])
 
 window = Tk()
 window.title("YouTube Downloader")
-window.config(padx=50, pady=50, bg=CHARCOAL_BLACK)
+window.config(
+    padx=50,
+    pady=50,
+    bg=user_settings['colors']['border'],
+)
 
-main_label = Label(text="YouTube Video Downloader", font=LARGE_FONT, fg=WARM_WHITE, bg=CHARCOAL_BLACK)
+main_label = Label(
+    text="YouTube Video Downloader",
+    font=f"{user_settings['font']} {user_settings['fontSizes']['huge']} bold",
+    fg=user_settings['colors']['titleText'],
+    bg=user_settings['colors']['border']
+)
 main_label.grid(column=1, row=0, columnspan=2)
 
-icons_label = Label(text="\U0001f3a5 \U0001f3ac \U0001f39f \U0001f3ab", font=LARGE_FONT, fg=ICE_BLUE, bg=CHARCOAL_BLACK)
+icons_label = Label(
+    text="\U0001f3a5 \U0001f3ac \U0001f39f \U0001f3ab",
+    font=f"{user_settings['font']} {user_settings['fontSizes']['huge']} bold",
+    fg=user_settings['colors']['titleText'],
+    bg=user_settings['colors']['border']
+)
 icons_label.grid(column=1, row=1, columnspan=2)
 
-inst_label = Label(text="Paste the YouTube link here:", font=SMALL_FONT, fg=WARM_WHITE, bg=CHARCOAL_BLACK)
+inst_label = Label(
+    text="Paste the YouTube link here:",
+    font=f"{user_settings['font']} {user_settings['fontSizes']['large']}",
+    fg=user_settings['colors']['defaultText'],
+    bg=user_settings['colors']['border']
+)
 inst_label.grid(column=1, row=2, columnspan=2)
 
 link = StringVar()
 link.trace_add('write', on_change)
-input_box = Entry(width=80, bg="white", borderwidth=5, relief="flat", textvariable=link, font="Roberto 10")
+input_box = Entry(
+    width=80,
+    bg=user_settings['colors']['background'],
+    fg=user_settings['colors']['url'],
+    borderwidth=5,
+    relief="sunken",
+    textvariable=link,
+    font=f"{user_settings['font']} {user_settings['fontSizes']['normal']}",
+)
 input_box.grid(column=1, row=3, columnspan=2)
 
-title_label = Label(text="", font=SMALL_FONT, fg=WARM_WHITE, bg=CHARCOAL_BLACK)
+title_label = Label(
+    text="",
+    font=f"{user_settings['font']} {user_settings['fontSizes']['normal']}",
+    fg=user_settings['colors']['defaultText'],
+    bg=user_settings['colors']['border']
+)
 title_label.grid(column=1, row=4, pady=5, columnspan=2)
 
-author_label = Label(text="", font=SMALL_FONT, fg=WARM_WHITE, bg=CHARCOAL_BLACK)
+author_label = Label(
+    text="",
+    font=f"{user_settings['font']} {user_settings['fontSizes']['normal']}",
+    fg=user_settings['colors']['defaultText'],
+    bg=user_settings['colors']['border']
+)
 author_label.grid(column=1, row=5, pady=5, columnspan=2)
 
 # TODO: Add check boxes for video and audio choices
 
-output_label = Label(text="Output Filename", font=SMALL_FONT, fg=WARM_WHITE, bg=CHARCOAL_BLACK)
+output_label = Label(
+    text="Output Filename",
+    font=f"{user_settings['font']} {user_settings['fontSizes']['large']}",
+    fg=user_settings['colors']['defaultText'],
+    bg=user_settings['colors']['border']
+)
 output_label.grid(column=1, row=6)
 
-output_box = Entry(width=80, bg="white", borderwidth=5, relief="flat", font="Roberto 10")
+output_box = Entry(
+    width=80,
+    bg=user_settings['colors']['background'],
+    fg=user_settings['colors']['defaultText'],
+    borderwidth=5,
+    relief="sunken",
+    font=f"{user_settings['font']} {user_settings['fontSizes']['normal']}",
+)
 output_box.grid(column=2, row=6)
 
-download_button = Button(text="Download", width=25, height=2, command=download_video, font=SMALL_FONT)
+download_button = Button(
+    text="Download",
+    width=12,
+    height=1,
+    command=download_video,
+    font=f"{user_settings['font']} {user_settings['fontSizes']['huge']}",
+    background=user_settings['colors']['redButton'],
+    default="disabled",
+)
 download_button.grid(column=1, row=7, columnspan=2)
 
+# TODO: Add check boxes to delete source files.
 # TODO: Add a progress bar!
 
 window.mainloop()

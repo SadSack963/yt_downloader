@@ -1,28 +1,30 @@
-import logging
 from shutil import which
+
+import logging
 import json
 
 logger = logging.getLogger(__name__)
 
+# Known working values in case the user settings become unusable
 _DEFAULT_SETTINGS = {
     "savePath": "./downloaded_content",
     "ffmpegPath": "ffmpeg",
     "colors": {
-        "border": "3c3f41",
-        "background": "2b2b2b",
-        "defaultText": "a9b7c6",
-        "titleText": "b0b0b0",
-        "url": "287bde",
-        "greenButton": "30593d",
-        "redButton": "a02f020"
+        "border": "#3c3f41",
+        "background": "#2b2b2b",
+        "defaultText": "#a9b7c6",
+        "titleText": "#b0b0b0",
+        "url": "#287bde",
+        "greenButton": "#30593d",
+        "redButton": "#a02f20"
     },
     "font": "Roboto",
     "fontSizes": {
-        "tiny": "8",
-        "small": "10",
-        "normal": "12",
-        "large": "20",
-        "huge": "30"
+        "tiny": 8,
+        "small": 10,
+        "normal": 15,
+        "large": 20,
+        "huge": 30
     }
 }
 
@@ -55,7 +57,7 @@ def get_settings(reset: bool = False) -> dict:
     return settings
 
 
-# TODO: Check for FFmpeg on user's system - issue notification if not found
+# TODO: Issue notification if FFmpeg not found on user's system
 # TODO: Recheck if a path is entered, or the user installs FFmpeg and requests a recheck
 def check_ffmpeg(path) -> None:
     if not which(path):

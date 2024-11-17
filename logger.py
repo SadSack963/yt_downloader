@@ -1,6 +1,7 @@
+from datetime import date
+
 import logging
 import sys
-from datetime import date
 
 logger = logging.getLogger(__name__)
 
