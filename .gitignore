@@ -1,5 +1,5 @@
-.idea
-.venvS
-logs
+.idea/
+.venv/
+logs/
 test*
-Downloaded_Content
+Downloaded_Content/
