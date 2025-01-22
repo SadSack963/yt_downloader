@@ -11,7 +11,7 @@ from ffmpeg.errors import FFmpegError
 from html import escape
 from pytubefix import YouTube
 from pytubefix.cli import on_progress
-from pytubefix.exceptions import RegexMatchError
+from pytubefix.exceptions import RegexMatchError, BotDetection
 from urllib.error import HTTPError, URLError
 
 import logging
@@ -37,7 +37,7 @@ def get_title() -> None:
     def enable():
         title_label.config(text=yt.title)
         author_label.config(text=yt.author)
-        output_box.insert(0, yt.title)
+        output_box.insert(0, "OUTPUT_" + yt.title)
         download_button.config(state="normal")
         download_button.config(background=user_settings['colors']['greenButton'])
 
@@ -51,9 +51,14 @@ def get_title() -> None:
     url = get_user_input(input_box.get())
     if url:
         try:
+            logging.info(f"Input URL: {url}")
             yt = YouTube(url=url)
             enable()
-        except RegexMatchError:
+        except RegexMatchError as e:
+            logging.error(f"URL RegexMatchError: [{e.args}] {e.pattern}")
+            disable()
+        except BotDetection as e:
+            logging.error(f"URL BotDetection: [{e.args}] {e.error_string}")
             disable()
     else:
         disable()
@@ -69,13 +74,14 @@ def download_video() -> None:
     if url:
         filename = get_user_input(output_box.get()).rstrip(".mp4")
         try:
-            yt = YouTube(url, on_progress_callback=on_progress)
+            yt = YouTube(url, on_progress_callback=on_progress)  # use_po_token=True
 
             # Get the streams with the highest resolution video and best quality audio
             video_stream = yt.streams.filter(file_extension='mp4', only_video=True).get_highest_resolution(progressive=False)
             audio_stream = yt.streams.filter(file_extension='mp4', only_audio=True).order_by("abr")[-1]
 
-            # TODO: Disable download_button and change text. Enable when finished or error
+            # Disable download_button and change text. Enable when finished or error
+            download_button.config(state="disabled", text="Downloading")
             # TODO: Download options for video and audio
 
             # Download the streams
@@ -91,8 +97,12 @@ def download_video() -> None:
             title_label.config(text="Video not found on YouTube.")  # TODO: Create function to change error colour, etc.
         except HTTPError as e:
             logging.error(f"HTTP error: [{e.code}] {e.reason}")
+            title_label.config(text="HTTP Error.")
         except URLError as e:
             logging.error(f"URL error: {e.reason}")
+            title_label.config(text="URL Error.")
+        finally:
+            download_button.config(state="normal", text="Download")
 
 
 def merge(video_path: str, audio_path: str, filename: str) -> None:
@@ -100,7 +110,7 @@ def merge(video_path: str, audio_path: str, filename: str) -> None:
     After downloading separate video and audio, combine using:
     ffmpeg -i "video_filename.mp4" -i "audio_filename.m4a" -acodec copy -vcodec copy "out_filename.mp4"
     """
-    destination_path = f"{user_settings["savePath"]}/{filename}.mp4"
+    destination_path = f'{user_settings["savePath"]}/{filename}.mp4'
     try:
         # Transcoding is slow. Keep the original codecs.
         ffmpeg = (
@@ -117,8 +127,8 @@ def merge(video_path: str, audio_path: str, filename: str) -> None:
         logging.error(f"FFmpeg error: [{e.arguments}] {e.message}")
         title_label.config(text=f"FFmpeg error: [{e.arguments}] {e.message}")
     else:
-        logging.info("Success! Video and Audio merged")
-        title_label.config(text="Success!")  # TODO: Something a bit more informative please :)
+        logging.info(f"Success! Video and Audio merged - {destination_path}")
+        title_label.config(text=f"Success! Saved to {destination_path}")
 
 
 start_logging()
