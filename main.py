@@ -83,6 +83,7 @@ def download_video() -> None:
 
             # Disable download_button and change text. Enable when finished or error
             download_button.config(state="disabled", text="Downloading")
+            window.update()
             # TODO: Download options for video and audio
 
             # Download the streams
