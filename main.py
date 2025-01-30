@@ -14,6 +14,7 @@ from pytubefix.cli import on_progress
 from pytubefix.exceptions import RegexMatchError, BotDetection
 from urllib.error import HTTPError, URLError
 
+
 import logging
 
 from logger import start_logging
@@ -52,13 +53,13 @@ def get_title() -> None:
     if url:
         try:
             logging.info(f"Input URL: {url}")
-            yt = YouTube(url=url)
+            yt = YouTube(url=url, use_po_token=True)
             enable()
         except RegexMatchError as e:
             logging.error(f"URL RegexMatchError: [{e.args}] {e.pattern}")
             disable()
         except BotDetection as e:
-            logging.error(f"URL BotDetection: [{e.args}] {e.error_string}")
+            logging.error(f"URL BotDetection: {e.error_string}")
             disable()
     else:
         disable()

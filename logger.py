@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def start_logging():
     today = date.today()
-    date_sortable = f'{today.year}{today.month}{today.day}'
+    date_sortable = f'{today.year}{today.month:02d}{today.day:02d}'
 
     # https://docs.python.org/3.13/library/logging.html#logging.basicConfig
     # https://docs.python.org/3.13/library/stdtypes.html#printf-style-string-formatting
