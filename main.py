@@ -38,7 +38,7 @@ def get_title() -> None:
     def enable():
         title_label.config(text=yt.title)
         author_label.config(text=yt.author)
-        output_box.insert(0, "OUTPUT_" + yt.title)
+        output_box.insert(0, "OUTPUT_" + yt.title.replace(":", ""))  # Remove colons as they mess up ffmpeg
         download_button.config(state="normal")
         download_button.config(background=user_settings['colors']['greenButton'])
 
