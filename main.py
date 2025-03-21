@@ -38,6 +38,7 @@ def get_title() -> None:
     def enable():
         title_label.config(text=yt.title)
         author_label.config(text=yt.author)
+        output_box.delete(FIRST, LAST)  # Clear previous value
         output_box.insert(0, "OUTPUT_" + yt.title.replace(":", ""))  # Remove colons as they mess up ffmpeg
         download_button.config(state="normal")
         download_button.config(background=user_settings['colors']['greenButton'])
@@ -53,7 +54,7 @@ def get_title() -> None:
     if url:
         try:
             logging.info(f"Input URL: {url}")
-            yt = YouTube(url=url, use_po_token=True)
+            yt = YouTube(url=url, use_po_token=True)  # , client="WEB")  # , token_file="tokens.json")
             enable()
         except RegexMatchError as e:
             logging.error(f"URL RegexMatchError: [{e.args}] {e.pattern}")
@@ -75,7 +76,7 @@ def download_video() -> None:
     if url:
         filename = get_user_input(output_box.get()).rstrip(".mp4")
         try:
-            yt = YouTube(url, on_progress_callback=on_progress)  # use_po_token=True
+            yt = YouTube(url=url, on_progress_callback=on_progress, use_po_token=True)  # , client="WEB")  # , token_file="tokens.json")
 
             # Get the streams with the highest resolution video and best quality audio
             video_stream = yt.streams.filter(file_extension='mp4', only_video=True).get_highest_resolution(progressive=False)
@@ -94,8 +95,9 @@ def download_video() -> None:
             audio_path = audio_stream.download(output_path=user_settings["savePath"])
             logging.debug("Audio download - end")
             merge(video_path, audio_path, filename)
-        except RegexMatchError:
-            logging.warning(f'Video not found - {url}')
+        except RegexMatchError as e:
+            logging.error(f'Video not found - {url}, RegexMatchError: {e.caller}, {e.pattern}')
+            logging.debug("--- Check for updated pytubefix package ---")
             title_label.config(text="Video not found on YouTube.")  # TODO: Create function to change error colour, etc.
         except HTTPError as e:
             logging.error(f"HTTP error: [{e.code}] {e.reason}")
