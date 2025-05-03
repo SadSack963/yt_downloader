@@ -38,7 +38,7 @@ def get_title() -> None:
     def enable():
         title_label.config(text=yt.title)
         author_label.config(text=yt.author)
-        output_box.delete(FIRST, LAST)  # Clear previous value
+        # output_box.delete(FIRST, LAST)  # Clear previous value... TODO: IF there is one!
         output_box.insert(0, "OUTPUT_" + yt.title.replace(":", ""))  # Remove colons as they mess up ffmpeg
         download_button.config(state="normal")
         download_button.config(background=user_settings['colors']['greenButton'])
@@ -97,7 +97,7 @@ def download_video() -> None:
             merge(video_path, audio_path, filename)
         except RegexMatchError as e:
             logging.error(f'Video not found - {url}, RegexMatchError: {e.caller}, {e.pattern}')
-            logging.debug("--- Check for updated pytubefix package ---")
+            logging.debug("--- Check for updated pytubefix package in PyCharm Settings -> Project -> Python Interpreter ---")
             title_label.config(text="Video not found on YouTube.")  # TODO: Create function to change error colour, etc.
         except HTTPError as e:
             logging.error(f"HTTP error: [{e.code}] {e.reason}")
